@@ -1,0 +1,6 @@
+{
+    "bot_token": "<ВАШ_ТОКЕН_ТЕЛЕГРАМ_БОТА>",
+    "spreadsheet_id": "<ID_ТАБЛИЦЫ_GOOGLE>",
+    "range_name": "A2:C100",
+    "admin_ids": [123456789]
+} 
