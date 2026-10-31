@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Bot data and logs
+subscriptions.db
+*.log
+
+# Local secrets
+.env
+
+# OS
+.DS_Store

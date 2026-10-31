@@ -1,148 +1,105 @@
 # DevRel CFP Bot
 
-## Описание
+A Telegram bot that reminds people about CFP (call for papers) deadlines of IT conferences. Users subscribe to the conference categories they care about and get notified in Telegram before submissions close.
 
-Этот бот предназначен для автоматического уведомления сотрудников о дедлайнах подачи заявок (CFP) на русскоязычные IT-конференции. Пользователи могут подписываться на интересующие их категории конференций и получать напоминания и уведомления прямо в Telegram.
+The conference list lives in a Google Sheet, so the DevRel team updates it without touching the code.
 
----
+## Features
 
-## Требования
+- Subscriptions by category: Backend, Frontend, QA and any others you add to the sheet
+- Reminders a week and a day before a CFP closes, checked daily at 09:00 server time
+- `/my_conferences` lists open CFPs for your subscriptions
+- Admin commands: subscriber stats and manual notifications for a category
+
+## Requirements
+
 - Python 3.8+
-- pip (Python package manager)
-- Доступ к серверу с выходом в интернет
-- Аккаунт Telegram для получения уведомлений
-- Google Service Account (файл `credentials.json`)
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- A Google Cloud service account with read access to the sheet
 
----
+## Setup
 
-## Установка
-
-1. **Клонируйте репозиторий или загрузите файлы проекта на сервер:**
+### 1. Install
 
 ```bash
-git clone <URL-ВАШЕГО-РЕПОЗИТОРИЯ>
-cd <ПАПКА_ПРОЕКТА>
-```
-
-2. **Установите зависимости:**
-
-```bash
+git clone https://github.com/mikhailpopov6/devrel-cfp-bot.git
+cd devrel-cfp-bot
 pip install -r requirements.txt
 ```
 
-3. **Создайте и настройте файл `config.json`:**
+### 2. Configure `config.json`
 
-Пример содержимого:
+The repository contains a template. Fill it in on your server:
+
 ```json
 {
-    "bot_token": "<ВАШ_ТОКЕН_ТЕЛЕГРАМ_БОТА>",
-    "spreadsheet_id": "<ID_ТАБЛИЦЫ_GOOGLE>",
+    "bot_token": "<YOUR_TELEGRAM_BOT_TOKEN>",
+    "spreadsheet_id": "<GOOGLE_SHEET_ID>",
     "range_name": "A2:C100",
     "admin_ids": [123456789]
 }
 ```
-- `bot_token` — токен вашего Telegram-бота (получить у @BotFather)
-- `spreadsheet_id` — ID Google Sheets с данными конференций
-- `range_name` — диапазон данных (оставьте как есть или настройте под вашу таблицу)
-- `admin_ids` — список user_id администраторов (можно узнать свой user_id через @userinfobot в Telegram)
 
-4. **Подготовьте файл `credentials.json`:**
+- `bot_token` — your bot token from @BotFather
+- `spreadsheet_id` — ID of the Google Sheet with conferences
+- `range_name` — data range; keep the default unless your sheet differs
+- `admin_ids` — Telegram user IDs of admins (you can get yours from @userinfobot)
 
-- Получите файл сервисного аккаунта Google (JSON) через Google Cloud Console.
-- Удалите из файла все персональные данные, такие как:
-  - `private_key_id`
-  - `private_key`
-  - `client_email`
-  - `client_id`
-  - `auth_uri`, `token_uri`, `auth_provider_x509_cert_url`, `client_x509_cert_url`
-- Оставьте только структуру и нераскрытые поля, чтобы не хранить чувствительные данные в репозитории.
-- Для запуска бота на сервере используйте полный файл с реальными данными, но **не публикуйте его**.
+### 3. Add `credentials.json`
 
-**Пример очищенного файла для репозитория:**
-```json
-{
-  "type": "service_account",
-  "project_id": "<project_id>",
-  "private_key_id": "",
-  "private_key": "",
-  "client_email": "",
-  "client_id": "",
-  "auth_uri": "",
-  "token_uri": "",
-  "auth_provider_x509_cert_url": "",
-  "client_x509_cert_url": ""
-}
-```
+`credentials.json` in the repository is an empty template. On the server, replace it with the full service account key you download from Google Cloud (see below). Never commit the real key.
 
----
+## Google Sheet
 
-## Создание Google-таблицы и получение ключей
+### Create the sheet
 
-### 1. Создание Google-таблицы
+Create a sheet with these columns in the first row:
 
-1. Перейдите на https://docs.google.com/spreadsheets и создайте новую таблицу.
-2. В первой строке (заголовки) создайте следующие столбцы:
-   - `Название` — название конференции
-   - `Дата начала` — дата начала конференции (например, 15.09.2024)
-   - `CFP дедлайн` — крайний срок подачи заявок (например, 01.08.2024)
-   - `Категории` — категории через запятую (например, Backend,Frontend,QA)
-   - `Ссылка` — ссылка на сайт конференции или страницу подачи заявок
+| Name | Start date | CFP deadline | Categories | Link |
+|---|---|---|---|---|
+| DevConf Moscow | 15.09.2024 | 01.08.2024 | Backend, Frontend | https://devconf.ru |
+| QA Days | 10.10.2024 | 20.08.2024 | QA, Testing | https://qadays.ru |
 
-**Пример:**
-| Название         | Дата начала | CFP дедлайн | Категории           | Ссылка                |
-|------------------|-------------|-------------|---------------------|-----------------------|
-| DevConf Moscow   | 15.09.2024  | 01.08.2024  | Backend,Frontend    | https://devconf.ru    |
-| QA Days          | 10.10.2024  | 20.08.2024  | QA,Testing          | https://qadays.ru     |
+- Dates use the `DD.MM.YYYY` format.
+- Separate categories with a comma and a space: `Backend, Frontend`.
+- The sheet ID is the part of the URL between `/d/` and `/edit`.
+- Share the sheet with the service account email (read access is enough).
 
-3. После заполнения скопируйте ID таблицы из URL (например, https://docs.google.com/spreadsheets/d/`1AbC...xyz`/edit#gid=0 — ID это часть между `/d/` и `/edit`).
-4. Убедитесь, что сервисный аккаунт (см. ниже) имеет доступ на чтение к этой таблице (через "Файл" → "Доступ" → добавить email сервисного аккаунта).
+### Get a service account key
 
-### 2. Получение ключей сервисного аккаунта Google
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create or pick a project.
+2. Go to **APIs & Services → Credentials → Create credentials → Service account**.
+3. Enter a name, click **Create and continue**, then **Done** (project roles are optional).
+4. Open the new service account, go to **Keys → Add key → Create new key → JSON**.
+5. Save the downloaded file as `credentials.json` next to the bot.
+6. Use the service account email (for example `my-bot@my-project.iam.gserviceaccount.com`) to share the sheet.
 
-1. Перейдите в Google Cloud Console: https://console.cloud.google.com/
-2. Создайте новый проект или выберите существующий.
-3. В меню слева выберите "APIs & Services" → "Credentials" ("API и сервисы" → "Учетные данные").
-4. Нажмите "Create Credentials" → "Service account" ("Создать учетные данные" → "Сервисный аккаунт").
-5. Заполните имя и описание, нажмите "Create and Continue".
-6. На шаге "Grant this service account access to project" можно пропустить (нажать "Done").
-7. В списке сервисных аккаунтов выберите созданный аккаунт, перейдите на вкладку "Keys" ("Ключи") и нажмите "Add Key" → "Create new key" → выберите JSON.
-8. Скачайте получившийся файл — это и есть ваш `credentials.json`.
-9. Email сервисного аккаунта (например, `my-bot@my-project.iam.gserviceaccount.com`) используйте для предоставления доступа к Google-таблице.
+## Run
 
----
-
-## Инициализация базы данных
-
-Перед первым запуском рекомендуется инициализировать базу данных подписок:
+Initialize the subscriptions database once:
 
 ```bash
-python3
->>> from cfp_bot import init_db
->>> init_db()
->>> exit()
+python3 -c "from cfp_bot import init_db; init_db()"
 ```
 
----
-
-## Запуск бота
+Start the bot:
 
 ```bash
 python cfp_bot.py
 ```
 
-Бот начнёт работу и будет принимать команды в Telegram.
+## Commands
 
----
+For everyone:
 
-## Основные команды для пользователей
+- `/start` — welcome message
+- `/subscribe` — subscribe to conference categories
+- `/my_conferences` — open CFPs for your subscriptions
+- `/help` — help
 
-- `/start` — приветственное сообщение
-- `/subscribe` — подписка на категории конференций
-- `/my_conferences` — список конференций по подпискам
-- `/help` — справка
+For admins:
 
-Для администраторов:
-- `/subscribers` — статистика подписчиков по категориям
-- `/notify` — отправить уведомление о CFP по выбранной категории (доступно только администраторам)
+- `/subscribers` — subscriber stats by category
+- `/notify` — send a CFP notification for a chosen category
 
-
+The bot talks to users in Russian: it was built for Russian-speaking IT conferences.
